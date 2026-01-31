@@ -1,6 +1,11 @@
 import streamlit as st
 import random
-from hangman_words_day7 import word_list
+# Ensure hangman_words_day7.py exists in your directory with a word_list variable
+try:
+    from hangman_words_day7 import word_list
+except ImportError:
+    word_list = ["PYTHON", "STREAMLIT", "HANGMAN", "CYBERSPACE", "PROGRAMMING"]
+
 import base64
 import os
 
@@ -70,9 +75,11 @@ HANGMAN_PICS = [r'''
 
 # ================= VIDEO HELPER =================
 def get_base64_video(video_path):
-    with open(video_path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
+    if os.path.exists(video_path):
+        with open(video_path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    return None
 
 # ================= THEME SELECTION =================
 if "theme" not in st.session_state:
@@ -95,12 +102,10 @@ if "word" not in st.session_state:
     st.session_state.duplicate_flag = False
 
 # ================= BACKGROUND LOGIC =================
-video_file = None
-if st.session_state.theme == "NEON":
-    video_file = "p71.gif.mp4"
+video_file = "p71.gif.mp4" if st.session_state.theme == "NEON" else None
+video_data = get_base64_video(video_file) if video_file else None
 
-if video_file and os.path.exists(video_file):
-    video_data = get_base64_video(video_file)
+if video_data:
     st.markdown(f"""
         <style>
         #bg-video {{
@@ -115,7 +120,7 @@ if video_file and os.path.exists(video_file):
         </video>
     """, unsafe_allow_html=True)
 
-# ================= SPACE ROCKET EFFECT CSS (DIVERSE FLEET) =================
+# ================= SPACE ROCKET EFFECT CSS =================
 rocket_icons = ["🚀", "🛸", "🛰️", "☄️", "🚀"]
 rockets_html = "".join([
     f'<div class="rocket" style="'
@@ -148,10 +153,10 @@ space_css = f"""
 {rockets_html}
 """
 
-# ================= WINTER SNOW EFFECT CSS =================
+# ================= WINTER SNOW EFFECT CSS (UPDATED: 70 flakes, 4s avg) =================
 snowflakes_html = "".join([
-    f'<div class="snowflake" style="left:{random.randint(1, 98)}%; animation-duration:{random.uniform(2, 5)}s; animation-delay:{random.uniform(0, 4)}s;">❄️</div>'
-    for _ in range(100)
+    f'<div class="snowflake" style="left:{random.randint(1, 98)}%; animation-duration:{random.uniform(3, 5)}s; animation-delay:{random.uniform(0, 4)}s;">❄️</div>'
+    for _ in range(70)
 ])
 
 snow_css = f"""
@@ -225,7 +230,6 @@ def process_guess():
 
     if guess in st.session_state.guessed:
         st.session_state.duplicate_flag = True
-        st.session_state.msg = ("warning", f"'{guess}' was already tried!")
         return
 
     st.session_state.guessed.append(guess)
@@ -245,7 +249,7 @@ def process_guess():
 # ================= THEME BUTTONS =================
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    if st.button("3D"): st.session_state.theme = "NEON"; st.rerun()
+    if st.button("🚨 NEON"): st.session_state.theme = "NEON"; st.rerun()
 with c2:
     if st.button("🤖 CYBER"): st.session_state.theme = "CYBER"; st.rerun()
 with c3:
@@ -253,7 +257,7 @@ with c3:
 with c4:
     if st.button("☃️ WINTER"): st.session_state.theme = "WINTER"; st.rerun()
 
-# ================= UI LAYOUT =================
+# ================= UI LAYOUT (FIXED MOBILE WARNING) =================
 st.markdown(f'<div class="ascii-logo">{LOGO}</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 1])
@@ -261,11 +265,15 @@ with col1:
     st.code(HANGMAN_PICS[6 - st.session_state.lives])
 
 with col2:
-    m_type, m_text = st.session_state.msg
-    if m_type == "error": st.error(m_text)
-    elif m_type == "success": st.success(m_text)
-    elif m_type == "warning": st.warning(m_text)
-    else: st.info(m_text)
+    # Logic to show duplicate warning inside the main message container for mobile visibility
+    if st.session_state.duplicate_flag:
+        st.warning("⚠️ ALREADY GUESSED!")
+    else:
+        m_type, m_text = st.session_state.msg
+        if m_type == "error": st.error(m_text)
+        elif m_type == "success": st.success(m_text)
+        elif m_type == "warning": st.warning(m_text)
+        else: st.info(m_text)
     st.write(f"### Lives: {'❤️' * st.session_state.lives}")
 
 display_word = " ".join([l if l in st.session_state.guessed else "_" for l in st.session_state.word])
@@ -273,8 +281,6 @@ st.markdown(f'<p class="word-font">{display_word}</p>', unsafe_allow_html=True)
 
 if not st.session_state.game_over:
     st.text_input("GUESS", max_chars=1, key="current_input", on_change=process_guess)
-    if st.session_state.duplicate_flag:
-        st.markdown("<p style='color: #FFD700; font-weight: bold; text-align: center;'>⚠️ ALREADY GUESSED!</p>", unsafe_allow_html=True)
     st.button("SUBMIT", on_click=process_guess)
 else:
     if st.session_state.lives > 0:
