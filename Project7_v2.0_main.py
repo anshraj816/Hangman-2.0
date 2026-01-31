@@ -249,7 +249,7 @@ def process_guess():
 # ================= THEME BUTTONS =================
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    if st.button("🚨 NEON"): st.session_state.theme = "NEON"; st.rerun()
+    if st.button(" 3D "): st.session_state.theme = "NEON"; st.rerun()
 with c2:
     if st.button("🤖 CYBER"): st.session_state.theme = "CYBER"; st.rerun()
 with c3:
