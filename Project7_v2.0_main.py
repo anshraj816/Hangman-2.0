@@ -1,6 +1,11 @@
 import streamlit as st
 import random
 from hangman_words_day7 import word_list
+import base64
+import os
+
+# ================= PAGE CONFIG =================
+st.set_page_config(page_title="Hangman Pro", page_icon="🎯", layout="centered")
 
 # --- ASSETS ---
 LOGO = r"""
@@ -63,8 +68,11 @@ HANGMAN_PICS = [r'''
       |
 =========''']
 
-# ================= PAGE CONFIG =================
-st.set_page_config(page_title="Hangman Pro", page_icon="🎯", layout="centered")
+# ================= VIDEO HELPER =================
+def get_base64_video(video_path):
+    with open(video_path, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
 
 # ================= THEME SELECTION =================
 if "theme" not in st.session_state:
@@ -73,8 +81,8 @@ if "theme" not in st.session_state:
 themes = {
     "NEON": "radial-gradient(circle, #2a0845 0%, #000000 100%)",
     "CYBER": "linear-gradient(135deg, #000428 0%, #004e92 100%)",
-    "SPACE": "url('https://www.transparenttextures.com/patterns/stardust.png'), radial-gradient(circle, #1b2735 0%, #090a0f 100%)",
-    "NATURE": "url('https://www.transparenttextures.com/patterns/green-dust-and-scratches.png'), linear-gradient(135deg, #134e5e 0%, #71b280 100%)"
+    "SPACE": "radial-gradient(circle, #090a0f 0%, #000000 100%)",
+    "WINTER": "radial-gradient(circle at center, #001524 0%, #000000 100%)"
 }
 
 # ================= SESSION STATE =================
@@ -84,75 +92,139 @@ if "word" not in st.session_state:
     st.session_state.lives = 6
     st.session_state.game_over = False
     st.session_state.msg = ("info", "Welcome! Start guessing.")
-    st.session_state.duplicate_flag = False  # Track duplicate state
+    st.session_state.duplicate_flag = False
+
+# ================= BACKGROUND LOGIC =================
+video_file = None
+if st.session_state.theme == "NEON":
+    video_file = "p71.gif.mp4"
+
+if video_file and os.path.exists(video_file):
+    video_data = get_base64_video(video_file)
+    st.markdown(f"""
+        <style>
+        #bg-video {{
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; object-fit: cover;
+        }}
+        .stApp {{ background: rgba(0,0,0,0.5) !important; }}
+        </style>
+        <video autoplay loop muted playsinline id="bg-video">
+            <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
+        </video>
+    """, unsafe_allow_html=True)
+
+# ================= SPACE ROCKET EFFECT CSS (DIVERSE FLEET) =================
+rocket_icons = ["🚀", "🛸", "🛰️", "☄️", "🚀"]
+rockets_html = "".join([
+    f'<div class="rocket" style="'
+    f'left:{random.randint(-10, 110)}%; '
+    f'top:{random.randint(0, 100)}%; '
+    f'font-size:{random.randint(20, 60)}px; '
+    f'animation-duration:{random.uniform(5, 15)}s; '
+    f'animation-delay:{random.uniform(0, 10)}s; '
+    f'filter: drop-shadow(0 0 {random.randint(5, 15)}px {random.choice(["#ff4b2b", "#00e5ff", "#ffffff"])});'
+    f'">{random.choice(rocket_icons)}</div>'
+    for _ in range(15)
+])
+
+space_css = f"""
+<style>
+@keyframes fly_space {{
+  0% {{ transform: translate(-20vw, 20vh) rotate(-45deg); opacity: 0; }}
+  10% {{ opacity: 1; }}
+  90% {{ opacity: 1; }}
+  100% {{ transform: translate(120vw, -20vh) rotate(-45deg); opacity: 0; }}
+}}
+.rocket {{
+  position: fixed; z-index: 1000; pointer-events: none;
+  animation: fly_space linear infinite;
+}}
+.stApp {{
+    background: url('https://www.transparenttextures.com/patterns/stardust.png'), radial-gradient(circle, #090a0f 0%, #000000 100%) !important;
+}}
+</style>
+{rockets_html}
+"""
+
+# ================= WINTER SNOW EFFECT CSS =================
+snowflakes_html = "".join([
+    f'<div class="snowflake" style="left:{random.randint(1, 98)}%; animation-duration:{random.uniform(2, 5)}s; animation-delay:{random.uniform(0, 4)}s;">❄️</div>'
+    for _ in range(100)
+])
+
+snow_css = f"""
+<style>
+.stApp {{ background: radial-gradient(circle at center, #001524 0%, #000000 100%) !important; }}
+[data-testid="stAppViewContainer"] {{ background-color: transparent !important; }}
+@keyframes snow {{
+  0% {{ transform: translateY(-10vh) translateX(0px); opacity: 1; }}
+  100% {{ transform: translateY(100vh) translateX(20px); opacity: 0.2; }}
+}}
+.snowflake {{
+  position: fixed; top: -5vh; color: white; font-size: 20px;
+  user-select: none; z-index: 1000; pointer-events: none;
+  animation-name: snow; animation-iteration-count: infinite; animation-timing-function: linear;
+}}
+</style>
+{snowflakes_html}
+"""
 
 # ================= MOBILE-FRIENDLY CSS =================
 st.markdown(f"""
     <style>
     audio {{ display: none !important; }}
     .stApp {{
-        background: {themes[st.session_state.theme]};
-        background-attachment: fixed;
+        background: {themes[st.session_state.theme] if st.session_state.theme not in ["NEON", "SPACE", "WINTER"] else "transparent"} !important;
+        background-attachment: fixed !important;
         color: #ffffff;
     }}
     .ascii-logo {{
         font-family: 'Courier New', monospace;
-        color: #00e5ff; 
-        text-align: center;
-        white-space: pre;
-        font-weight: bold;
-        text-shadow: 0 0 15px #00e5ff;
-        font-size: clamp(6px, 1.5vw, 10px); 
+        color: #00e5ff; text-align: center; white-space: pre; font-weight: bold;
+        text-shadow: 0 0 15px #00e5ff; font-size: clamp(6px, 1.5vw, 10px); 
         margin-bottom: 10px;
     }}
     .word-font {{
         font-size: clamp(28px, 8vw, 45px) !important;
-        letter-spacing: clamp(5px, 2vw, 12px);
-        text-align: center;
-        color: {"#CCFF00" if st.session_state.theme == "NATURE" else "#ff00ff"}; 
-        font-family: 'Courier New', monospace;
-        font-weight: 900;
-        margin: 20px 0;
-        text-shadow: 3px 3px 0px rgba(0,0,0,0.5), 0 0 20px {"#CCFF00" if st.session_state.theme == "NATURE" else "#ff00ff"};
+        letter-spacing: clamp(5px, 2vw, 12px); text-align: center;
+        color: {"#e0e0e0" if st.session_state.theme == "SPACE" else ("#b6fbff" if st.session_state.theme == "WINTER" else "#ff00ff")}; 
+        font-family: 'Courier New', monospace; font-weight: 900; margin: 20px 0;
+        text-shadow: 0 0 15px {"#ffffff" if st.session_state.theme == "SPACE" else ("#b6fbff" if st.session_state.theme == "WINTER" else "#ff00ff")};
     }}
     div.stButton > button {{
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
-        color: white;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 12px;
-        padding: 10px;
-        width: 100%;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px);
+        color: white !important; border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 12px; padding: 10px; width: 100%; transition: all 0.3s ease;
     }}
     div.stButton > button:hover {{
-        background: #00e5ff;
-        color: #000;
-        transform: translateY(-2px);
-        box-shadow: 0 0 20px #00e5ff;
+        background: #00e5ff; color: #000 !important; box-shadow: 0 0 20px #00e5ff;
     }}
     p, h3, label {{
         color: white !important;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        text-shadow: 1px 1px 3px black;
     }}
     </style>
     """, unsafe_allow_html=True)
 
+if st.session_state.theme == "WINTER":
+    st.markdown(snow_css, unsafe_allow_html=True)
+elif st.session_state.theme == "SPACE":
+    st.markdown(space_css, unsafe_allow_html=True)
 
 # ================= CALLBACK LOGIC =================
 def process_guess():
     guess = st.session_state.current_input.upper()
     st.session_state.current_input = ""
-    st.session_state.duplicate_flag = False  # Reset flag on new guess attempt
+    st.session_state.duplicate_flag = False
 
     if not guess or not guess.isalpha():
         st.session_state.msg = ("warning", "Enter a valid letter!")
         return
 
     if guess in st.session_state.guessed:
-        st.session_state.duplicate_flag = True  # Set flag for the notification
+        st.session_state.duplicate_flag = True
         st.session_state.msg = ("warning", f"'{guess}' was already tried!")
         return
 
@@ -170,36 +242,30 @@ def process_guess():
     elif st.session_state.lives <= 0:
         st.session_state.game_over = True
 
-
 # ================= THEME BUTTONS =================
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    if st.button("🚨 NEON"): st.session_state.theme = "NEON"; st.rerun()
+    if st.button("3D"): st.session_state.theme = "NEON"; st.rerun()
 with c2:
     if st.button("🤖 CYBER"): st.session_state.theme = "CYBER"; st.rerun()
 with c3:
     if st.button("✨ SPACE"): st.session_state.theme = "SPACE"; st.rerun()
 with c4:
-    if st.button("🌿 NATURE"): st.session_state.theme = "NATURE"; st.rerun()
+    if st.button("☃️ WINTER"): st.session_state.theme = "WINTER"; st.rerun()
 
 # ================= UI LAYOUT =================
 st.markdown(f'<div class="ascii-logo">{LOGO}</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns([1, 1])
-
 with col1:
     st.code(HANGMAN_PICS[6 - st.session_state.lives])
 
 with col2:
     m_type, m_text = st.session_state.msg
-    if m_type == "error":
-        st.error(m_text)
-    elif m_type == "success":
-        st.success(m_text)
-    elif m_type == "warning":
-        st.warning(m_text)
-    else:
-        st.info(m_text)
+    if m_type == "error": st.error(m_text)
+    elif m_type == "success": st.success(m_text)
+    elif m_type == "warning": st.warning(m_text)
+    else: st.info(m_text)
     st.write(f"### Lives: {'❤️' * st.session_state.lives}")
 
 display_word = " ".join([l if l in st.session_state.guessed else "_" for l in st.session_state.word])
@@ -207,22 +273,15 @@ st.markdown(f'<p class="word-font">{display_word}</p>', unsafe_allow_html=True)
 
 if not st.session_state.game_over:
     st.text_input("GUESS", max_chars=1, key="current_input", on_change=process_guess)
-
-    # --- ADDED NOTIFICATION LINE ---
     if st.session_state.duplicate_flag:
-        st.markdown(
-            "<p style='color: #FFD700; font-weight: bold; text-shadow: 2px 2px 4px black; text-align: center; font-size: 18px;'>⚠️ YOU ALREADY GUESSED THIS LETTER!</p>",
-            unsafe_allow_html=True)
-
-    st.button("SUBMIT GUESS", on_click=process_guess)
+        st.markdown("<p style='color: #FFD700; font-weight: bold; text-align: center;'>⚠️ ALREADY GUESSED!</p>", unsafe_allow_html=True)
+    st.button("SUBMIT", on_click=process_guess)
 else:
     if st.session_state.lives > 0:
         st.balloons()
         st.success("🎉 VICTORY!")
-        st.audio("https://www.myinstants.com/media/sounds/win-sound-effect-8.mp3", autoplay=True)
     else:
         st.error(f"💀 DEFEAT! Word: {st.session_state.word}")
-        st.audio("https://www.myinstants.com/media/sounds/gta-v-death-sound-effect.mp3", autoplay=True)
 
     if st.button("New Game 🔄"):
         for key in list(st.session_state.keys()):
