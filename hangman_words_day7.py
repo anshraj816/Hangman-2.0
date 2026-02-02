@@ -4,7 +4,7 @@ word_list=['electricity', 'donkey', 'hardware', 'xerox', 'transistor', 'computer
  'bodyguard', 'titanic', 'global', 'ozone', 'bridge', 'technology', 'spider',
  'pyramid', 'sphere', 'member', 'warning', 'yourself', 'screen', 'language',
  'system', 'internet', 'parameter', 'traffic', 'network', 'filter', 'nucleus',
- 'automatic', 'microphone', 'cassette',pulchritude', 'defenestrate', 'sonder', 'ephemeral', 'limerence', 'petrichor', 'ineffable', 'susurrus', 'vellichor', 'clinomania',
+ 'automatic', 'microphone', 'cassette','pulchritude', 'defenestrate', 'sonder', 'ephemeral', 'limerence', 'petrichor', 'ineffable', 'susurrus', 'vellichor', 'clinomania',
 'psithurism', 'apricity', 'numinous', 'penumbra', 'umbra', 'lucent', 'noctivagant', 'threnody', 'mellifluous', 'effervescent',
 'eldritch', 'esoteric', 'arcane', 'cryptic', 'quixotic', 'labyrinthine', 'diaphanous', 'ethereal', 'evanescent', 'resplendent',
 'palimpsest', 'chiaroscuro', 'verisimilitude', 'sonderzeit', 'hiraeth', 'reverie', 'transience', 'efflorescence', 'panoply', 'epiphany',
